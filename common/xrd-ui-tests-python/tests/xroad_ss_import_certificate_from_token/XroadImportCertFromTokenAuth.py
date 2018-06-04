@@ -23,19 +23,18 @@ class XroadImportCertFromTokenAuth(unittest.TestCase):
 
     def test_a_import_sign_cert_for_auth_key(self):
         main = MainController(self)
-
         # Set test name and number
-        main.test_number = 'SS_31.a'
+        main.test_number = 'SS_31.auth.a'
         main.test_name = self.__class__.__name__
 
-        ss2_host = main.config.get('ss2.host')
-        ss2_user = main.config.get('ss2.user')
-        ss2_pass = main.config.get('ss2.pass')
-        ss2_ssh_host = main.config.get('ss2.ssh_host')
-        ss2_ssh_user = main.config.get('ss2.ssh_user')
-        ss2_ssh_pass = main.config.get('ss2.ssh_pass')
+        ss2_host = main.config.get('hwtoken.host')
+        ss2_user = main.config.get('hwtoken.user')
+        ss2_pass = main.config.get('hwtoken.pass')
+        ss2_ssh_host = main.config.get('hwtoken.ssh_host')
+        ss2_ssh_user = main.config.get('hwtoken.ssh_user')
+        ss2_ssh_pass = main.config.get('hwtoken.ssh_pass')
         ca_name = main.config.get('ca.name')
-        ss_id = xroad.split_xroad_subsystem(main.config.get('ss2.server_id'))
+        ss_id = xroad.split_xroad_subsystem(main.config.get('hwtoken.server_id'))
         ca_ssh_client = ssh_client.SSHClient(main.config.get('ca.ssh_host'), main.config.get('ca.ssh_user'),
                                       main.config.get('ca.ssh_pass'))
         token_name = main.config.get('utimaco.token_name')
@@ -45,7 +44,7 @@ class XroadImportCertFromTokenAuth(unittest.TestCase):
             main.reload_webdriver(ss2_host, ss2_user, ss2_pass)
             main.wait_until_visible(type=By.CSS_SELECTOR, element=KEYSANDCERTIFICATES_BTN_CSS).click()
             main.wait_until_visible(type=By.XPATH, element=KEY_TABLE_ROW_BY_LABEL_XPATH.format(auth_key_label)).click()
-            generate_auth_csr(main, ca_name=ca_name)
+            generate_auth_csr(main, ca_name=ca_name, dns='00000001', organization='00000001')
             import_auth_cert_from_token(main, ss2_ssh_host, ss2_ssh_user, ss2_ssh_pass, ss_id, ca_ssh_client, cert_type='sign')
         except:
             main.save_exception_data()
@@ -57,32 +56,34 @@ class XroadImportCertFromTokenAuth(unittest.TestCase):
     def test_b_import_auth_cert(self):
         main = MainController(self)
         # Set test name and number
-        main.test_number = 'SS_31.b'
+        main.test_number = 'SS_31.sign.b'
         main.test_name = self.__class__.__name__
 
-        ss2_host = main.config.get('ss2.host')
-        ss2_user = main.config.get('ss2.user')
-        ss2_pass = main.config.get('ss2.pass')
-        ss2_ssh_host = main.config.get('ss2.ssh_host')
-        ss2_ssh_user = main.config.get('ss2.ssh_user')
-        ss2_ssh_pass = main.config.get('ss2.ssh_pass')
-        ca_name = main.config.get('ca.ssh_host')
+        ss2_host = main.config.get('hwtoken.host')
+        ss2_user = main.config.get('hwtoken.user')
+        ss2_pass = main.config.get('hwtoken.pass')
+        ss2_ssh_host = main.config.get('hwtoken.ssh_host')
+        ss2_ssh_user = main.config.get('hwtoken.ssh_user')
+        ss2_ssh_pass = main.config.get('hwtoken.ssh_pass')
+        ca_name = main.config.get('ca.name')
         ca_ssh_client = ssh_client.SSHClient(main.config.get('ca.ssh_host'), main.config.get('ca.ssh_user'),
                                              main.config.get('ca.ssh_pass'))
-        ss_id = xroad.split_xroad_subsystem(main.config.get('ss2.server_id'))
+        ss_id = xroad.split_xroad_subsystem(main.config.get('hwtoken.server_id'))
         token_name = main.config.get('utimaco.token_name')
         auth_key_label = main.config.get('certs.ss_auth_key_label')
+        auth_variable = 'test'
 
         try:
             main.reload_webdriver(ss2_host, ss2_user, ss2_pass)
             main.wait_until_visible(type=By.CSS_SELECTOR, element=KEYSANDCERTIFICATES_BTN_CSS).click()
             main.wait_until_visible(type=By.XPATH, element=KEY_TABLE_ROW_BY_LABEL_XPATH.format(auth_key_label)).click()
-            generate_auth_csr(main, ca_name=ca_name)
+            generate_auth_csr(main, ca_name=ca_name, dns=auth_variable, organization=auth_variable)
             import_auth_cert_from_token(main, ss2_ssh_host, ss2_ssh_user, ss2_ssh_pass, ca_ssh_client=ca_ssh_client, ss_id=ss_id)
         except:
             main.save_exception_data()
             raise
         finally:
+            main.wait_jquery()
             main.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
             confirm_dialog_click(main)
             reset_hard_token(main, token_name)

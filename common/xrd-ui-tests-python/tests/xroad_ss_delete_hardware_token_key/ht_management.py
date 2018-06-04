@@ -28,6 +28,7 @@ def test_hardware_key_delete(case, ssh_host=None, ssh_username=None, ssh_passwor
         try:
             self.by_xpath(keys_and_certificates_table.HARDTOKEN_ERROR_LOGIN2)
             hardware_token_login(self, pin)
+
         except:
             pass
 
@@ -122,6 +123,7 @@ def test_hardware_key_delete(case, ssh_host=None, ssh_username=None, ssh_passwor
         self.log('SS_37 4. System deletes the key from the token.')
         if self.wait_until_visible(type=By.XPATH, element=keys_and_certificates_table.HARDTOKEN_TABLE_XPATH2).click():
             raise Exception('Token key not deleted')
+        self.logdata.append('Log into the token')
 
         '''Add generate key message to logdata'''
         self.logdata.append(log_constants.GENERATE_KEY)
@@ -135,8 +137,8 @@ def test_hardware_key_delete(case, ssh_host=None, ssh_username=None, ssh_passwor
         self.log('SS_35 6. Token is deleted from system configuration when no other keys present')
         token_count_after_delete = get_key_conf_token_count(sshclient)
         self.is_true(token_count_after_delete < token_count)
-        self.logdata.append('Log into the token')
 
+        time.sleep(20)
         '''Check audit log'''
         if ssh_host is not None:
             # Check logs for entries
@@ -163,7 +165,7 @@ def hardware_token_login(self, pin):
     '''Insert correct PIN'''
     self.input(key_label_input, pin)
     self.wait_jquery()
-    self.logdata.append(log_constants.SOFTTOKEN_LOGIN_SUCCESS)
+    # self.logdata.append(log_constants.SOFTTOKEN_LOGIN_SUCCESS)
 
     '''Click "OK" button'''
     self.wait_until_visible(type=By.XPATH, element=popups.TOKEN_LOGIN_OK_BTN_XPATH).click()

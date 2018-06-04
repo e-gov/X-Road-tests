@@ -9,7 +9,7 @@ class XroadRemoveCp(unittest.TestCase):
     Requires helper scenarios:
     X-Road version: 6.16.0
     """
-    def test_upload_trusted_anchor(self):
+    def test_removecp(self):
         main = MainController(self)
         main.test_number = 'XroadRemoveCp'
         main.test_name = self.__class__.__name__

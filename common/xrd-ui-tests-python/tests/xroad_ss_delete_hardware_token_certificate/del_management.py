@@ -104,6 +104,7 @@ def register_cert(self, ssh_host, ssh_user, ssh_pass, client, ca_ssh_host, ca_ss
 
     def register():
 
+
         self.wait_until_visible(type=By.CSS_SELECTOR, element=sidebar.KEYSANDCERTIFICATES_BTN_CSS).click()
         self.wait_jquery()
 

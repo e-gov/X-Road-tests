@@ -7,7 +7,7 @@ import del_management
 """
 UC SS_40: Delete a Certificate from Hardware Token
 RIA URL: https://jira.ria.ee/browse/XTKB-165
-Depends on finishing other test(s):
+Depends on finishing other test(s): XroadLoginHardwareToken
 Requires helper scenarios:
 X-Road version: 6.16.0
 """
@@ -58,7 +58,7 @@ class XroadDeleteHardwareTokenCertificate(unittest.TestCase):
         except:
             main.log('XroadDeleteHardwareTokenCertificate test failed')
             main.save_exception_data()
-            assert False
+            raise
         finally:
 
             '''Test teardown'''

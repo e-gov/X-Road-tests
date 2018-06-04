@@ -5,14 +5,14 @@ import ht_management
 from helpers import ssh_client
 from main.maincontroller import MainController
 from tests.xroad_configure_service_222.wsdl_validator_errors import wait_until_server_up
-import os
+import os, commands
 
 class XroadDeleteHardwareTokenKey(unittest.TestCase):
     """
     SS_35 6. Delete a Key from the System Configuration
     UC SS_37: Delete a Key from a Hardware Token
     RIA URL: https://jira.ria.ee/browse/XTKB-162
-    Depends on finishing other test(s):
+    Depends on finishing other test(s): XroadLoginHardwareToken
     Requires helper scenarios:
     X-Road version: 6.16.0
     """
@@ -41,6 +41,7 @@ class XroadDeleteHardwareTokenKey(unittest.TestCase):
                                                                  ssh_password=ss_ssh_pass, pin=ss_token_pin)
 
         try:
+            # test = commands.getstatusoutput("ifconfig docker | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1")
             '''Open webdriver'''
             main.reload_webdriver(url=ss_host, username=ss_user, password=ss_pass)
             '''Run the test'''

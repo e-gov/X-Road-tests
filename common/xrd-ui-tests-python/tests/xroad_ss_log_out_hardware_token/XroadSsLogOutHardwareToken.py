@@ -2,8 +2,7 @@
 import unittest
 from main.maincontroller import MainController
 import ht_management
-
-
+import os
 """
  UC SS_27: Log Out of a Hardware Token
  RIA URL: https://jira.ria.ee/browse/XTKB-159
@@ -45,5 +44,8 @@ class XroadSsLogOutHardwareToken(unittest.TestCase):
             main.save_exception_data()
             assert False
         finally:
+            '''Start preconfigured docker container'''
+            os.system('sudo docker run -p3001:3001 -dt --rm --name cssim410_test cssim410_test')
+
             '''Test teardown'''
             main.tearDown()

@@ -761,10 +761,22 @@ def failing_tests(file_client_name, file_client_class, file_client_code, file_cl
                 self.log('Confirm deleting')
                 popups.confirm_dialog_click(self)
             except:
+                self.log('Confirmation dialog not shown')
+                try:
+                    # If asked a yes/no question, answer yes
+                    self.wait_until_visible(type=By.XPATH, element=popups.YESNO_POPUP_NO_BTN_XPATH).click()
+                    self.wait_jquery()
+                except:
+                    self.log('Yes/no dialog not shown')
+                    pass
                 pass
+
         except:
             # Exception may occur if the client has not been fully registered. As we still need to remove
             # temporary data, delete the client anyway.
+
+            self.log('Client not fully registered, deleting anyway.')
+
             self.wait_until_visible(type=By.ID, element=popups.CLIENT_DETAILS_POPUP_DELETE_BUTTON_ID).click()
             self.wait_jquery()
 
