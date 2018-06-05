@@ -404,6 +404,8 @@ _Table 8. MainController class methods_
 | start\_mock\_service() | If starting the Mock Service is not disabled in the configuration, tries to start it. Creates a new _MockRunner_ instance if it does not exist. |
 | save\_screenshot(filename) | Takes a screenshot of the current browser window and saves it to configured temporary directory. |
 | save\_text\_data(filename, data) | Saves text data to a file in the configured temporary directory. |
+| wait\_download(filename, download_time_limit=30, check_interval=1) | Check if file exists before limit has passed. |
+| wait\_download\_wildcard(filename, download_time_limit=30, check_interval=1) | Check if at least one matching file exists before limit has passed. |
 | logout() | Logs out from XRoad GUI. |
 | login(username, password) | Tries to log in to XRoad GUI with the specified credentials. |
 | log(message) | Prints the current timestamp and message to standard output. |

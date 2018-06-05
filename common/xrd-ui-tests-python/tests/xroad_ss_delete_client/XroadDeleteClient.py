@@ -47,7 +47,6 @@ class XroadDeleteClient(unittest.TestCase):
             time.sleep(120)
             main.reload_webdriver(ss2_host, ss2_user, ss2_pass)
             remove_client(main, ss2_client, delete_cert=False)
-            remove_client(main, ss2_client_2)
         except:
             main.save_exception_data()
             raise

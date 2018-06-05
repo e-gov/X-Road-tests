@@ -16,6 +16,7 @@ from view_models import sidebar, keys_and_certificates_table as keyscertificates
     popups as popups, clients_table_vm, messages, keys_and_certificates_table, log_constants, cs_security_servers
 from view_models.keys_and_certificates_table import SUBJECT_DISTINGUISHED_NAME_POPUP_O_XPATH
 
+
 def test_generate_csr_and_import_cert(client_code, client_class, check_inputs=False, check_success=True,
                                       ss2_ssh_host=None, ss2_ssh_user=None, ss2_ssh_pass=None,
                                       delete_csr_before_import=False):
@@ -48,10 +49,9 @@ def test_generate_csr_and_import_cert(client_code, client_class, check_inputs=Fa
                      generate_same_csr_twice=True,
                      log_checker=log_checker)
 
-
         # Get the certificate request path
-        file_path = glob.glob(self.get_download_path('_'.join(['*', server_name, client_class, client_code]) + '.der'))[
-            0]
+        file_path = self.wait_download_wildcard(
+            (self.get_download_path('_'.join(['*', server_name, client_class, client_code]) + '.der')))[0]
 
         # Create an SSH connection to CA
         client = ssh_client.SSHClient(self.config.get('ca.ssh_host'), self.config.get('ca.ssh_user'),
@@ -103,8 +103,6 @@ def register_cert(self, ssh_host, ssh_user, ssh_pass, client, ca_ssh_host, ca_ss
     """
 
     def register():
-
-
         self.wait_until_visible(type=By.CSS_SELECTOR, element=sidebar.KEYSANDCERTIFICATES_BTN_CSS).click()
         self.wait_jquery()
 
@@ -136,7 +134,7 @@ def register_cert(self, ssh_host, ssh_user, ssh_pass, client, ca_ssh_host, ca_ss
         file_name = 'sign_csr_' + now_date.strftime('%Y%m%d') + '_member_{0}_{1}_{2}.der'. \
             format(client['instance'], client['class'], client['code'])
         '''Downloaded csr file path'''
-        file_path = glob.glob(self.get_download_path('_'.join(['*']) + file_name))[0]
+        file_path = self.wait_download_wildcard(self.get_download_path('_'.join(['*']) + file_name))[0]
         '''SSH client instance for ca'''
 
         sshclient = ssh_server_actions.get_client(ca_ssh_host, ca_ssh_user, ca_ssh_pass)
@@ -522,7 +520,6 @@ def generate_auth_csr(self, ca_name, organization='o', change_usage=True):
     self.wait_jquery()
 
 
-
 def delete_cert(self, ssh_host, ssh_user, ssh_pass):
     log_checker = auditchecker.AuditChecker(ssh_host, ssh_user, ssh_pass)
     current_log_lines = log_checker.get_line_count()
@@ -550,7 +547,8 @@ def delete_cert(self, ssh_host, ssh_user, ssh_pass):
 
     '''Verify Token key deletion'''
     try:
-        element = self.driver.find_element_by_xpath(keys_and_certificates_table.HARD_TOKEN_CERT_BY_KEY_LABEL.format('delete'))
+        element = self.driver.find_element_by_xpath(
+            keys_and_certificates_table.HARD_TOKEN_CERT_BY_KEY_LABEL.format('delete'))
         if element.is_displayed():
             raise RuntimeError('Token certificate is not deleted')
     except ElementNotVisibleException:

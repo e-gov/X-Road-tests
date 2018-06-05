@@ -13,7 +13,6 @@ xroad_cp_edit_settings_file.XroadEditSettingsFile=1
 xroad_cp_update_configuration.XroadUpdateConfiguration=1
 xroad_cp_generate_configuration_dir.XroadGenerateConfigurationDir=1
 xroad_cp_logout_software_token.XroadLogoutSoftwareToken=1
-#xroad_cp_remove_cp.XroadRemoveCp.py=240
 
 xroad_cs_delete_member.XroadCsDeleteMemberWithSS=1
 xroad_ss_register_cert.XroadRegisterCert=1

@@ -24,7 +24,7 @@ def test_hardtoken_login(case, ssh_host=None, ssh_username=None, ssh_password=No
 
         '''Set maximum authentication fail count'''
 
-        sshclient.exec_command('cd /tmp; ./csadm Dev=3001@{0} LogonSign=ADMIN,"/tmp/ADMIN.key" SetMaxAuthFails=3'.format(docker_ip))
+        sshclient.exec_command('cd /home/{1}; ./csadm Dev=3001@{0} LogonSign=ADMIN,"/home/{1}/ADMIN.key" SetMaxAuthFails=3'.format(docker_ip, ssh_username))
         sshclient.exec_command('sudo service xroad-signer restart')
 
         time.sleep(40)
@@ -214,7 +214,7 @@ def unlock_pin(ssh_host=None, ssh_username=None, ssh_password=None, docker_ip=No
 
     '''Cut connetcion with target host'''
     sshclient.exec_command(
-        'cd /tmp; ./csadm Dev=3001@{0} LogonSign=ADMIN,"/tmp/ADMIN.key" ChangeUser=USR_0000,1234'.format(docker_ip))
+        'cd /home/{1}; ./csadm Dev=3001@{0} LogonSign=ADMIN,"/home/{1}/ADMIN.key" ChangeUser=USR_0000,1234'.format(docker_ip, ssh_username))
     sshclient.exec_command('sudo service xroad-signer restart', sudo=True)
     time.sleep(40)
 

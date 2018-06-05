@@ -26,7 +26,7 @@ def delete_key_from_configuration(self, key_label, sshclient, try_cancel=False, 
     self.wait_until_visible(type=By.XPATH, element=KEY_TABLE_ROW_BY_LABEL_XPATH.format(key_label)).click()
     self.wait_jquery()
     self.log('SS_35 1. Clicking on "Delete" button')
-    self.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
+    self.click(type=By.ID, element=DELETE_BTN_ID)
     self.wait_jquery()
     if has_auth_certs:
         self.log('SS_35 2. Checking if auth cert unregistering message is present and text as expected')

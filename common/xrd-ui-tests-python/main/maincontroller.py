@@ -17,11 +17,12 @@ from helpers import confreader, webdriver_init, mockrunner, login
 from main.assert_helper import AssertHelper
 
 from selenium.webdriver.common.action_chains import ActionChains
-
+import time
+import glob
 
 class MainController(AssertHelper):
     # Default configuration file, relative to our current script
-    configuration = 'config.ini'
+    configuration = 'config_lxd.ini'
 
     close_webdriver = True  # Close webdriver in tearDown
     driver = None  # Init webdriver variable
@@ -303,6 +304,44 @@ class MainController(AssertHelper):
         if os.path.isabs(path):
             return path
         return os.path.normpath(os.path.join(self.get_path(self.download_dir), path))
+
+    def wait_download(self, filename, download_time_limit=30, check_interval=1):
+        '''
+        Check if file exists before limit has passed.
+        :param filename: str - filename to look for
+        :param download_time_limit: int - time limit in seconds
+        :param check_interval: int - check interval in seconds
+        :return: None
+        '''
+        start_time = time.time()
+        while True:
+            time.sleep(check_interval)
+            if time.time() - start_time > download_time_limit:
+                # Raise AssertionError
+                raise AssertionError('Download time limit of {0} seconds passed for file {1}'.format(
+                    download_time_limit, filename))
+            if os.path.isfile(filename):
+                break
+
+    def wait_download_wildcard(self, filename, download_time_limit=30, check_interval=1):
+        '''
+        Check if at least one matching file exists before limit has passed.
+        :param filename: str - filename to look for
+        :param download_time_limit: int - time limit in seconds
+        :param check_interval: int - check interval in seconds
+        :return: list - files matching the wildcard
+        '''
+        start_time = time.time()
+        while True:
+            time.sleep(check_interval)
+            if time.time() - start_time > download_time_limit:
+                # Raise AssertionError
+                self.log('Download time limit of {0} seconds passed for wildcard {1}'.format(
+                    download_time_limit, filename))
+                return []
+            files = glob.glob(filename)
+            if files:
+                return files
 
     def empty_directory(self, path):
         '''

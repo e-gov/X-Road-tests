@@ -59,14 +59,14 @@ def generate_certs_to_hsm(self, ca_ssh_host, ca_ssh_user, ca_ssh_pass, ss_ssh_ho
 
         self.wait_until_visible(type=By.XPATH, element=SUBJECT_DISTINGUISHED_NAME_POPUP_OK_BTN_XPATH).click()
         self.wait_jquery()
-        self.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
+        self.click(type=By.ID, element=DELETE_BTN_ID)
         confirm_dialog_click(self)
 
         server_name = get_server_name(self)
         remote_csr_path = 'temp.der'
         cert_path = 'temp.pem'
         time.sleep(3)
-        file_path = glob.glob(self.get_download_path('_'.join(['*', server_name, 'GOV', 'test']) + '.der'))[
+        file_path = self.wait_download_wildcard(self.get_download_path('_'.join(['*', server_name, 'GOV', 'test']) + '.der'))[
             0]
 
         client = ssh_client.SSHClient(ca_ssh_host, ca_ssh_user, ca_ssh_pass)
@@ -83,9 +83,9 @@ def generate_certs_to_hsm(self, ca_ssh_host, ca_ssh_user, ca_ssh_pass, ss_ssh_ho
         get_expired_cert(client, 'sign-sign', file_path, local_expired_cert_path, cert_path, remote_csr_path,
                          convert_der=True)
         ss_ssh_client = ssh_client.SSHClient(ss_ssh_host, ss_ssh_user, ss_ssh_pass)
-        ss_cert_path = '/tmp/cert.der'
-        ss_auth_cert_path = '/tmp/auth_cert.der'
-        ss_expired_cert_path = '/tmp/expired_cert.der'
+        ss_cert_path = '/home/{0}/cert.der'.format(ss_ssh_user)
+        ss_auth_cert_path = '/home/{0}/auth_cert.der'.format(ss_ssh_user)
+        ss_expired_cert_path = '/home/{0}/expired_cert.der'.format(ss_ssh_user)
 
         self.log('Put certs in ss')
         put_file_in_ss(ss_ssh_client, local_cert_path, ss_cert_path)
@@ -93,18 +93,18 @@ def generate_certs_to_hsm(self, ca_ssh_host, ca_ssh_user, ca_ssh_pass, ss_ssh_ho
         put_file_in_ss(ss_ssh_client, local_expired_cert_path, ss_expired_cert_path)
 
         self.log('Import certs to HSM')
-        existing_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='999')
-        working_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='123')
-        auth_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_auth_cert_path, key_id='456')
-        expired_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_expired_cert_path, key_id='789')
+        existing_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='999', username=ss_ssh_user)
+        working_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='123', username=ss_ssh_user)
+        auth_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_auth_cert_path, key_id='456', username=ss_ssh_user)
+        expired_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_expired_cert_path, key_id='789', username=ss_ssh_user)
         return working_cert_id, auth_cert_id, expired_cert_id, existing_cert_id
 
     return generate_certs
 
 
-def import_cert_with_p11tool(client, cert_path, key_id):
-    client.exec_command('cd /tmp; ./p11tool2 slot=0 LoginUser=1234 CertAttr=CKA_ID={0} PubKeyAttr=CKA_ID={0} '
-                        'ImportCert={1}'.format(key_id, cert_path))
+def import_cert_with_p11tool(client, cert_path, key_id, username='user'):
+    client.exec_command('cd /home/{2}; ./p11tool2 slot=0 LoginUser=1234 CertAttr=CKA_ID={0} PubKeyAttr=CKA_ID={0} '
+                        'ImportCert={1}'.format(key_id, cert_path, username))
     return '3{0}3{1}3{2}'.format(key_id[0], key_id[1], key_id[2])
 
 
@@ -245,12 +245,12 @@ def delete_key_in_another_window(self, ss_host, ss_user, ss_pass, token_name):
     get_registered_certs_count(self)
     time.sleep(5)
 
-    self.wait_until_visible(type=By.XPATH,
-                            element=HARDTOKEN_KEY.format(token_name)).click()
-    self.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
+    self.click(type=By.XPATH,
+                            element=HARDTOKEN_KEY.format(token_name))
+    self.click(type=By.ID, element=DELETE_BTN_ID)
     confirm_dialog_click(self)
-    self.wait_until_visible(type=By.CSS_SELECTOR, element='.key.unsaved').click()
-    self.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
+    self.click(type=By.CSS_SELECTOR, element='.key.unsaved')
+    self.click(type=By.ID, element=DELETE_BTN_ID)
     confirm_dialog_click(self)
     self.tearDown()
 
@@ -288,11 +288,11 @@ def import_auth_cert_from_token(self, ss_ssh_host, ss_ssh_user, ss_ssh_pass, ss_
              convert_der=True,
              close_client=False)
     ss_ssh_client = ssh_client.SSHClient(ss_ssh_host, ss_ssh_user, ss_ssh_pass)
-    ss_cert_path = '/tmp/cert.der'
+    ss_cert_path = '/home/{0}/cert.der'.format(ss_ssh_user)
     self.log('Upload cert to security server')
     put_file_in_ss(ss_ssh_client, local_cert_path, ss_cert_path)
     self.log('Import cert to hardware token')
-    uploaded_key_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='479')
+    uploaded_key_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='479', username=ss_ssh_user)
     self.log('Waiting until signer update')
     time.sleep(60)
     self.log('Refreshing page')
@@ -356,7 +356,7 @@ def reset_hard_token(self, token_name):
 
         while 'Token' not in next_row.text:
             self.click(next_row)
-            self.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
+            self.click(type=By.ID, element=DELETE_BTN_ID)
             confirm_dialog_click(self)
             next_row = self.wait_until_visible(type=By.XPATH,
                                                element=HARDTOKEN_NEXT_NOT_EMPTY_TR.format(token_name))

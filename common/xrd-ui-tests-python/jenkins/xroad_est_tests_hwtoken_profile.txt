@@ -1,0 +1,9 @@
+# Use these tests only if you have enabled hardware tokens
+
+xroad_ss_log_out_hardware_token.XroadSsLogOutHardwareToken=1
+xroad_ss_log_into_hardware_token.XroadLoginHardwareToken=1
+xroad_ss_delete_hardware_token_key.XroadDeleteHardwareTokenKey=1
+xroad_ss_delete_hardware_token_certificate.XroadDeleteHardwareTokenCertificate=1
+xroad_ss_import_certificate_from_token.XroadImportCertFromTokenAuth=1
+xroad_ss_import_certificate_from_token.XroadImportCertFromTokenSigning=1
+xroad_ss_remove_hwtoken.XroadRemoveHWT=1

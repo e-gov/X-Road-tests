@@ -95,7 +95,7 @@ def test_generate_csr_and_import_cert(client_code, client_class, usage_auth=Fals
 
         # Get the certificate request path
         file_path = \
-            glob.glob(self.get_download_path('_'.join(['*', server_name, client_class, client_code]) + '.der'))[
+            self.wait_download_wildcard(self.get_download_path('_'.join(['*', server_name, client_class, client_code]) + '.der'))[
                 0]
 
         # Create an SSH connection to CA
@@ -277,10 +277,10 @@ def register_cert(self, ssh_host, ssh_user, ssh_pass, cs_host, client, ca_ssh_ho
             format(client['instance'], client['class'], client['code'], '*')
         '''Downloaded csr file path'''
         try:
-            file_path = glob.glob(self.get_download_path('_'.join(['*']) + file_name))[0]
+            file_path = self.wait_download_wildcard(self.get_download_path('_'.join(['*']) + file_name))[0]
         except:
             time.sleep(5)
-            file_path = glob.glob(self.get_download_path('_'.join(['*']) + file_name))[0]
+            file_path = self.wait_download_wildcard(self.get_download_path('_'.join(['*']) + file_name))[0]
         '''SSH client instance for ca'''
         sshclient = ssh_server_actions.get_client(ca_ssh_host, ca_ssh_user, ca_ssh_pass)
         '''Remote csr path'''
@@ -1099,7 +1099,7 @@ def failing_tests(file_client_name, file_client_class, file_client_code, file_cl
                      server_name=ssh_server_actions.get_server_name(self),
                      check_inputs=False)
         file_path = \
-            glob.glob(self.get_download_path('_'.join(['*', server_name, client['class'], client['code']]) + '.der'))[0]
+            self.wait_download_wildcard(self.get_download_path('_'.join(['*', server_name, client['class'], client['code']]) + '.der'))[0]
 
         # Create SSH connection to CA
         sshclient = ssh_client.SSHClient(self.config.get('ca.ssh_host'), self.config.get('ca.ssh_user'),
@@ -1165,7 +1165,7 @@ def failing_tests(file_client_name, file_client_class, file_client_code, file_cl
                      server_name=ssh_server_actions.get_server_name(self),
                      check_inputs=False)
         file_path = \
-            glob.glob(self.get_download_path('_'.join(['*', server_name, client['class'], client['code']]) + '.der'))[0]
+            self.wait_download_wildcard(self.get_download_path('_'.join(['*', server_name, client['class'], client['code']]) + '.der'))[0]
         sshclient = ssh_client.SSHClient(self.config.get('ca.ssh_host'), self.config.get('ca.ssh_user'),
                                          self.config.get('ca.ssh_pass'))
 
@@ -1236,7 +1236,7 @@ def failing_tests(file_client_name, file_client_class, file_client_code, file_cl
                      server_name=ssh_server_actions.get_server_name(self),
                      check_inputs=False)
         file_path = \
-            glob.glob(self.get_download_path('_'.join(['*', server_name, client['class'], client['code']]) + '.der'))[0]
+            self.wait_download_wildcard(self.get_download_path('_'.join(['*', server_name, client['class'], client['code']]) + '.der'))[0]
 
         # Create an SSH connection to CA
         sshclient = ssh_client.SSHClient(self.config.get('ca.ssh_host'), self.config.get('ca.ssh_user'),
@@ -1349,7 +1349,7 @@ def failing_tests(file_client_name, file_client_class, file_client_code, file_cl
                      server_name=ssh_server_actions.get_server_name(self),
                      check_inputs=False)
         file_path = \
-            glob.glob(self.get_download_path('_'.join(['*', server_name, client['class'], client['code']]) + '.der'))[0]
+            self.wait_download_wildcard(self.get_download_path('_'.join(['*', server_name, client['class'], client['code']]) + '.der'))[0]
 
         # Open an SSH connection to CA
         sshclient = ssh_client.SSHClient(self.config.get('ca.ssh_host'), self.config.get('ca.ssh_user'),
@@ -1434,7 +1434,7 @@ def failing_tests(file_client_name, file_client_class, file_client_code, file_cl
         generate_auth_csr(self, ca_name=ca_name, organization='test', dns='test', )
 
         file_path = \
-            glob.glob(self.get_download_path('_'.join(['*']) + file_name))[0]
+            self.wait_download_wildcard(self.get_download_path('_'.join(['*']) + file_name))[0]
         self.log(file_path)
         # Create SSH connection to CA
         sshclient = ssh_client.SSHClient(self.config.get('ca.ssh_host'), self.config.get('ca.ssh_user'),
