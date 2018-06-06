@@ -22,7 +22,7 @@ import glob
 
 class MainController(AssertHelper):
     # Default configuration file, relative to our current script
-    configuration = 'config_lxd.ini'
+    configuration = 'config.ini'
 
     close_webdriver = True  # Close webdriver in tearDown
     driver = None  # Init webdriver variable
