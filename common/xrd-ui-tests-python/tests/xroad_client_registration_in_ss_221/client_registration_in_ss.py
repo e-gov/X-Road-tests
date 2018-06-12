@@ -1888,9 +1888,17 @@ def disable_management_wsdl(self, client_id, management_wsdl_url):
 
 def enable_management_wsdl(self, client_id, management_wsdl_url):
     def enable_mngmnt_wsdl():
+        self.log('Enable management service')
+        self.wait_jquery()
+        self.log('Open client services and find the management service')
         clients_table_vm.open_client_popup_services(self, client_id=client_id)
         wsdl_index = clients_table_vm.find_wsdl_by_name(self, management_wsdl_url)
-        clients_table_vm.client_services_popup_get_wsdl(self, wsdl_index=wsdl_index).click()
+        mgmt_service_el = clients_table_vm.client_services_popup_get_wsdl(self, wsdl_index=wsdl_index)
+        self.wait_jquery()
+        self.log('Select management WSDL')
+        self.click(mgmt_service_el)
+        self.wait_jquery()
+        self.wait_jquery('Click "Enable"')
         self.wait_until_visible(type=By.ID, element=CLIENT_DETAILS_POPUP_ENABLE_WSDL_BTN_ID).click()
         self.wait_jquery()
 
