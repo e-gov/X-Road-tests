@@ -1898,7 +1898,7 @@ def enable_management_wsdl(self, client_id, management_wsdl_url):
         self.log('Select management WSDL')
         self.click(mgmt_service_el)
         self.wait_jquery()
-        self.wait_jquery('Click "Enable"')
+        self.log('Click "Enable"')
         self.wait_until_visible(type=By.ID, element=CLIENT_DETAILS_POPUP_ENABLE_WSDL_BTN_ID).click()
         self.wait_jquery()
 
