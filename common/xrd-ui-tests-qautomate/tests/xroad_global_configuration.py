@@ -47,7 +47,7 @@ class Xroad_global_configuration(SetupTest):
     **Use cases:**
         * `Global configuration view source`_
             * `GCONF 2.2.1`_: View a Configuration Source
-        * `Global configuration download and recreate`_
+        * `Global configuration download and recreate`_
             * `GCONF 2.2.2`_: Download a Configuration Source Anchor File
             * `GCONF 2.2.3`_: Re-Create a Configuration Source Anchor
                 * Extension 2a. The process of generating the anchor terminated with an error message. (postpone?)
