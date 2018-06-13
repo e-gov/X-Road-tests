@@ -19,7 +19,7 @@ from view_models.messages import ERROR_MESSAGE_CSS, CERTIFICATE_ALREADY_EXISTS, 
     IMPORT_CERT_KEY_NOT_FOUND_ERROR, NO_CLIENT_FOR_CERTIFICATE, CERTIFICATE_NOT_VALID, SIGN_CERT_INSTEAD_AUTH_CERT
 from view_models.popups import GENERATE_KEY_POPUP_OK_BTN_XPATH, confirm_dialog_click
 from view_models.sidebar import KEYSANDCERTIFICATES_BTN_CSS
-
+from view_models.keys_and_certificates_table import SUBJECT_DISTINGUISHED_NAME_POPUP_O_XPATH
 
 def generate_certs_to_hsm(self, ca_ssh_host, ca_ssh_user, ca_ssh_pass, ss_ssh_host, ss_ssh_user, ss_ssh_pass,
                           token_name):
@@ -43,21 +43,30 @@ def generate_certs_to_hsm(self, ca_ssh_host, ca_ssh_user, ca_ssh_pass, ss_ssh_ho
         ca_select = Select(
             self.wait_until_visible(type=By.ID, element=GENERATE_CSR_SIGNING_REQUEST_APPROVED_CA_DROPDOWN_ID))
         self.wait_jquery()
-        ca_select.select_by_value(ca_ssh_host)
+        ca_select.select_by_value('Xroad Test CA CN')
         format_select = Select(
             self.wait_until_visible(type=By.ID, element=GENERATE_CSR_SIGNING_REQUEST_CSR_FORMAT_DROPDOWN_ID))
         format_select.select_by_value('DER')
         self.by_xpath(GENERATE_CSR_SIGNING_REQUEST_POPUP_OK_BTN_XPATH).click()
+
+        self.wait_jquery()
+
+        organization_input = self.wait_until_visible(type=By.XPATH,
+                                                     element=SUBJECT_DISTINGUISHED_NAME_POPUP_O_XPATH)
+        self.input(organization_input, 'o')
+
+        self.wait_jquery()
+
         self.wait_until_visible(type=By.XPATH, element=SUBJECT_DISTINGUISHED_NAME_POPUP_OK_BTN_XPATH).click()
         self.wait_jquery()
-        self.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
+        self.click(type=By.ID, element=DELETE_BTN_ID)
         confirm_dialog_click(self)
 
         server_name = get_server_name(self)
         remote_csr_path = 'temp.der'
         cert_path = 'temp.pem'
         time.sleep(3)
-        file_path = glob.glob(self.get_download_path('_'.join(['*', server_name, 'COM', 'test']) + '.der'))[
+        file_path = self.wait_download_wildcard(self.get_download_path('_'.join(['*', server_name, 'GOV', 'test']) + '.der'))[
             0]
 
         client = ssh_client.SSHClient(ca_ssh_host, ca_ssh_user, ca_ssh_pass)
@@ -74,9 +83,9 @@ def generate_certs_to_hsm(self, ca_ssh_host, ca_ssh_user, ca_ssh_pass, ss_ssh_ho
         get_expired_cert(client, 'sign-sign', file_path, local_expired_cert_path, cert_path, remote_csr_path,
                          convert_der=True)
         ss_ssh_client = ssh_client.SSHClient(ss_ssh_host, ss_ssh_user, ss_ssh_pass)
-        ss_cert_path = '/tmp/cert.der'
-        ss_auth_cert_path = '/tmp/auth_cert.der'
-        ss_expired_cert_path = '/tmp/expired_cert.der'
+        ss_cert_path = '/home/{0}/cert.der'.format(ss_ssh_user)
+        ss_auth_cert_path = '/home/{0}/auth_cert.der'.format(ss_ssh_user)
+        ss_expired_cert_path = '/home/{0}/expired_cert.der'.format(ss_ssh_user)
 
         self.log('Put certs in ss')
         put_file_in_ss(ss_ssh_client, local_cert_path, ss_cert_path)
@@ -84,18 +93,18 @@ def generate_certs_to_hsm(self, ca_ssh_host, ca_ssh_user, ca_ssh_pass, ss_ssh_ho
         put_file_in_ss(ss_ssh_client, local_expired_cert_path, ss_expired_cert_path)
 
         self.log('Import certs to HSM')
-        existing_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='999')
-        working_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='123')
-        auth_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_auth_cert_path, key_id='456')
-        expired_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_expired_cert_path, key_id='789')
+        existing_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='999', username=ss_ssh_user)
+        working_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='123', username=ss_ssh_user)
+        auth_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_auth_cert_path, key_id='456', username=ss_ssh_user)
+        expired_cert_id = import_cert_with_p11tool(ss_ssh_client, ss_expired_cert_path, key_id='789', username=ss_ssh_user)
         return working_cert_id, auth_cert_id, expired_cert_id, existing_cert_id
 
     return generate_certs
 
 
-def import_cert_with_p11tool(client, cert_path, key_id):
-    client.exec_command('p11tool2 slot=0 LoginUser=1234 CertAttr=CKA_ID={0} PubKeyAttr=CKA_ID={0} '
-                        'ImportCert={1}'.format(key_id, cert_path))
+def import_cert_with_p11tool(client, cert_path, key_id, username='user'):
+    client.exec_command('cd /home/{2}; ./p11tool2 slot=0 LoginUser=1234 CertAttr=CKA_ID={0} PubKeyAttr=CKA_ID={0} '
+                        'ImportCert={1}'.format(key_id, cert_path, username))
     return '3{0}3{1}3{2}'.format(key_id[0], key_id[1], key_id[2])
 
 
@@ -195,6 +204,21 @@ def test_import_cert_from_token(self, ss_ssh_host, ss_ssh_user, ss_ssh_pass, tok
             self.log('SS_31 7a.2 System logs the event "{0}"'.format(expected_log_msg))
             logs_found = log_checker.check_log(expected_log_msg, from_line=current_log_lines + 1)
             self.is_true(logs_found)
+        if expired_cert_error:
+            current_log_lines = log_checker.get_line_count()
+            self.log('SS_31 9a. Importing expired certificate')
+            self.wait_until_visible(type=By.XPATH,
+                                    element=CERT_INACTIVE_ROW_BY_DATA_ID_IMPORT_BTN.format(expired_cert_id)).click()
+
+            expected_error_msg = CERTIFICATE_NOT_VALID
+            self.log('SS_31 9a.1 System displays the error message "{0}"'.format(expected_error_msg))
+            error_msg = self.wait_until_visible(type=By.CSS_SELECTOR, element=ERROR_MESSAGE_CSS).text
+            self.is_equal(expected_error_msg, error_msg)
+            expected_log_msg = IMPORT_CERTIFICATE_FROM_TOKEN_FAILED
+            self.log('SS_31 9a.2 System logs the event "{0}"'.format(expected_log_msg))
+            logs_found = log_checker.check_log(IMPORT_CERTIFICATE_FROM_TOKEN_FAILED, from_line=current_log_lines + 1)
+            self.is_true(logs_found)
+
         if already_exists_error:
             current_log_lines = log_checker.get_line_count()
             self.driver.refresh()
@@ -209,19 +233,8 @@ def test_import_cert_from_token(self, ss_ssh_host, ss_ssh_user, ss_ssh_pass, tok
             self.log('SS_31 6a.2 System logs the event "{0}"'.format(expected_log_msg))
             logs_found = log_checker.check_log(expected_log_msg, from_line=current_log_lines + 1)
             self.is_true(logs_found)
-        if expired_cert_error:
-            current_log_lines = log_checker.get_line_count()
-            self.log('SS_31 9a. Importing expired certificate')
-            self.wait_until_visible(type=By.XPATH,
-                                    element=CERT_INACTIVE_ROW_BY_DATA_ID_IMPORT_BTN.format(expired_cert_id)).click()
-            expected_error_msg = CERTIFICATE_NOT_VALID
-            self.log('SS_31 9a.1 System displays the error message "{0}"'.format(expected_error_msg))
-            error_msg = self.wait_until_visible(type=By.CSS_SELECTOR, element=ERROR_MESSAGE_CSS).text
-            self.is_equal(expected_error_msg, error_msg)
-            expected_log_msg = IMPORT_CERTIFICATE_FROM_TOKEN_FAILED
-            self.log('SS_31 9a.2 System logs the event "{0}"'.format(expected_log_msg))
-            logs_found = log_checker.check_log(IMPORT_CERTIFICATE_FROM_TOKEN_FAILED, from_line=current_log_lines + 1)
-            self.is_true(logs_found)
+
+
 
     return test_import_from_token
 
@@ -229,15 +242,18 @@ def test_import_cert_from_token(self, ss_ssh_host, ss_ssh_user, ss_ssh_pass, tok
 def delete_key_in_another_window(self, ss_host, ss_user, ss_pass, token_name):
     self.reset_webdriver(url=ss_host, username=ss_user, password=ss_pass, close_previous=False)
     self.wait_until_visible(type=By.CSS_SELECTOR, element=KEYSANDCERTIFICATES_BTN_CSS).click()
-    self.wait_until_visible(type=By.XPATH,
-                            element=HARDTOKEN_KEY.format(token_name)).click()
+    get_registered_certs_count(self)
+    time.sleep(5)
 
-    self.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
+    self.click(type=By.XPATH,
+                            element=HARDTOKEN_KEY.format(token_name))
+    self.click(type=By.ID, element=DELETE_BTN_ID)
     confirm_dialog_click(self)
-    self.wait_until_visible(type=By.CSS_SELECTOR, element='.key.unsaved').click()
-    self.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
+    self.click(type=By.CSS_SELECTOR, element='.key.unsaved')
+    self.click(type=By.ID, element=DELETE_BTN_ID)
     confirm_dialog_click(self)
     self.tearDown()
+
 
 
 def get_expired_cert(sshclient, service, file_path, local_cert_path, remote_cert_path, remote_csr_path,
@@ -272,11 +288,11 @@ def import_auth_cert_from_token(self, ss_ssh_host, ss_ssh_user, ss_ssh_pass, ss_
              convert_der=True,
              close_client=False)
     ss_ssh_client = ssh_client.SSHClient(ss_ssh_host, ss_ssh_user, ss_ssh_pass)
-    ss_cert_path = '/tmp/cert.der'
+    ss_cert_path = '/home/{0}/cert.der'.format(ss_ssh_user)
     self.log('Upload cert to security server')
     put_file_in_ss(ss_ssh_client, local_cert_path, ss_cert_path)
     self.log('Import cert to hardware token')
-    uploaded_key_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='479')
+    uploaded_key_id = import_cert_with_p11tool(ss_ssh_client, ss_cert_path, key_id='479', username=ss_ssh_user)
     self.log('Waiting until signer update')
     time.sleep(60)
     self.log('Refreshing page')
@@ -291,7 +307,7 @@ def import_auth_cert_from_token(self, ss_ssh_host, ss_ssh_user, ss_ssh_pass, ss_
     self.wait_jquery()
 
     if cert_type == 'sign':
-        expected_error_msg = SIGN_CERT_INSTEAD_AUTH_CERT
+        expected_error_msg = 'Failed to import certificate: Signing certificate cannot be imported to authentication keys'
         self.log('SS_31 7b.1 System displays the error message "{0}"'.format(expected_error_msg))
         error_msg = self.wait_until_visible(type=By.CSS_SELECTOR, element=ERROR_MESSAGE_CSS).text
         self.is_equal(expected_error_msg, error_msg)
@@ -309,8 +325,13 @@ def import_auth_cert_from_token(self, ss_ssh_host, ss_ssh_user, ss_ssh_pass, ss_
         pass
 
     self.log('Find the imported cert row')
+
+    self.log('Refreshing page')
+    # self.reset_page()
+    self.wait_jquery()
     imported_cert_row = self.wait_until_visible(type=By.XPATH,
-                                                element=CERT_BY_KEY_AND_FRIENDLY_NAME.format('authkey', cert_name))
+                                                element=CERT_BY_KEY_AND_FRIENDLY_NAME.format('ta_generated_key_auth',
+                                                                                             cert_name))
     expected_cert_state = 'disabled'
     self.log('SS_31 11a.1 System sets the certificate state to "{0}"'.format(expected_cert_state))
     imported_cert_row_ocsp = imported_cert_row.find_elements_by_tag_name('td')[2].text
@@ -335,7 +356,7 @@ def reset_hard_token(self, token_name):
 
         while 'Token' not in next_row.text:
             self.click(next_row)
-            self.wait_until_visible(type=By.ID, element=DELETE_BTN_ID).click()
+            self.click(type=By.ID, element=DELETE_BTN_ID)
             confirm_dialog_click(self)
             next_row = self.wait_until_visible(type=By.XPATH,
                                                element=HARDTOKEN_NEXT_NOT_EMPTY_TR.format(token_name))
@@ -345,7 +366,9 @@ def reset_hard_token(self, token_name):
 
 def get_sign_keys_count(self):
     keys = self.wait_until_visible(type=By.CLASS_NAME, element=KEY_USAGE_CLASS, multiple=True)
-    sign_keys = filter(lambda x: x.text == 'sign', keys)
+    for key in keys:
+        self.js("arguments[0].scrollIntoView();", key)
+        sign_keys = filter(lambda x: x.text == 'sign', keys)
     return len(sign_keys)
 
 
@@ -356,4 +379,5 @@ def get_registered_certs_count(self):
         tds = cert.find_elements_by_tag_name('td')
         if tds[4].text == 'registered':
             registered_certs += 1
+            self.js("arguments[0].scrollIntoView();", cert)
     return registered_certs

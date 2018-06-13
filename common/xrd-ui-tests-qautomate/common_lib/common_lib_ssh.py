@@ -51,14 +51,13 @@ class Common_lib_ssh(CommonUtils):
 
         return self.run_bash_command(command, True).strip()[:-1]
 
-    def get_time(self, section="cs_url", date_format='%Y%m%d%H%M'):
+    def get_newest_directory_age(self, section="cs_url"):
         """
         :param section:  Test data section name
         """
         server = TESTDATA[section][u'server_address']
-        command = 'ssh {} date "+{}"'.format(server, date_format)
-
-        return self.run_bash_command(command, True)
+        command = "ssh {} 'expr $(date +%s) - $(stat -c %Y $(ls -dt /var/lib/xroad/public/V2/*/ | head -1))'".format(server)
+        return self.run_bash_command(command, True).strip()
 
     def verify_if_server_contains_file(self, section="cs_url", path=""):
         """

@@ -2,8 +2,7 @@
 import unittest
 from main.maincontroller import MainController
 import ht_management
-
-
+import os
 """
  UC SS_27: Log Out of a Hardware Token
  RIA URL: https://jira.ria.ee/browse/XTKB-159
@@ -22,17 +21,18 @@ class XroadSsLogOutHardwareToken(unittest.TestCase):
 
         main.test_name = self.__class__.__name__
 
-        ss_host = main.config.get('ss1.host')
-        ss_user = main.config.get('ss1.user')
-        ss_pass = main.config.get('ss1.pass')
+        ss_host = main.config.get('hwtoken.host')
+        ss_user = main.config.get('hwtoken.user')
+        ss_pass = main.config.get('hwtoken.pass')
+        ss_token_pin = main.config.get('hwtoken.token_pin')
 
-        ss_ssh_host = main.config.get('ss1.ssh_host')
-        ss_ssh_user = main.config.get('ss1.ssh_user')
-        ss_ssh_pass = main.config.get('ss1.ssh_pass')
+        ss_ssh_host = main.config.get('hwtoken.ssh_host')
+        ss_ssh_user = main.config.get('hwtoken.ssh_user')
+        ss_ssh_pass = main.config.get('hwtoken.ssh_pass')
 
         '''Configure the service'''
         test_logout = ht_management.test_hardware_logout(case=main, ssh_host=ss_ssh_host, ssh_username=ss_ssh_user,
-                                                   ssh_password=ss_ssh_pass)
+                                                   ssh_password=ss_ssh_pass, pin=ss_token_pin)
 
         try:
             '''Open webdriver'''
@@ -44,5 +44,8 @@ class XroadSsLogOutHardwareToken(unittest.TestCase):
             main.save_exception_data()
             assert False
         finally:
+            '''Start preconfigured docker container'''
+            os.system('sudo docker run -p3001:3001 -dt --rm --name cssim410_test cssim410_test')
+
             '''Test teardown'''
             main.tearDown()

@@ -47,7 +47,7 @@ class Xroad_global_configuration(SetupTest):
     **Use cases:**
         * `Global configuration view source`_
             * `GCONF 2.2.1`_: View a Configuration Source
-        * `Global configuration download and recreate`_
+        * `Global configuration download and recreate`_
             * `GCONF 2.2.2`_: Download a Configuration Source Anchor File
             * `GCONF 2.2.3`_: Re-Create a Configuration Source Anchor
                 * Extension 2a. The process of generating the anchor terminated with an error message. (postpone?)
@@ -548,11 +548,11 @@ class Xroad_global_configuration(SetupTest):
         # Step Verify edit cs address
         self.common_lib_ssh.verify_audit_log(section=u'cs_url', event=strings.edit_cs_address)
 
-        # Step Verify whitespace is parsed (disabled because of bug)
-        #TESTDATA.create_section(section_name=u'whitespace_address')
-        #TESTDATA[u'whitespace_address'][u'server_address'] = " " + TESTDATA[u'cs_url'][u'server_address']
-        #self.component_cs_system_settings.change_server_address(section=u'whitespace_address')
-        #self.cs_system_settings.verify_central_address_does_not_contain_whitespace()
+        # Step Verify whitespace is parsed
+        TESTDATA.create_section(section_name=u'whitespace_address')
+        TESTDATA[u'whitespace_address'][u'server_address'] = " " + TESTDATA[u'cs_url'][u'server_address']
+        self.component_cs_system_settings.change_server_address(section=u'whitespace_address')
+        self.cs_system_settings.verify_central_address_does_not_contain_whitespace()
 
         # Step Verify parse input empty
         TESTDATA.create_section(section_name=u'empty_address')
@@ -618,15 +618,12 @@ class Xroad_global_configuration(SetupTest):
         self.common_lib_ssh.verify_if_server_contains_file(u'cs_url', external_conf_path)
 
         # Step Verify configuration directory time
-        v2_newest_dir = self.common_lib_ssh.get_newest_directory(u'cs_url', v2_path)
-        server_time = self.common_lib_ssh.get_time(u'cs_url')
-        time_length = len(self.common_lib_ssh.get_time(u'cs_url'))
-
-        v2_newest_dir_time = int(v2_newest_dir[:time_length-1])
-        server_time = int(server_time)
-        time_since_last_generation = (server_time - v2_newest_dir_time)
         configuration_timeout = int(TESTDATA.get_parameter(u'cs_url', u'configuration_timeout'))
+        sleep(configuration_timeout)
 
+        v2_newest_dir = self.common_lib_ssh.get_newest_directory(u'cs_url', v2_path)
+        time_since_last_generation = int(self.common_lib_ssh.get_newest_directory_age())
+        
         print("time since last dir generation", time_since_last_generation)
         if time_since_last_generation >= configuration_timeout:
             self.fail(errors.newest_configuration_file_too_old)

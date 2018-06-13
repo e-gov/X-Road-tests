@@ -12,6 +12,9 @@ from tests.xroad_parse_users_inputs.xroad_parse_user_inputs import parse_csr_inp
 from view_models import sidebar, keys_and_certificates_table as keyscertificates_constants, \
     popups as popups, clients_table_vm, messages, keys_and_certificates_table, log_constants, cs_security_servers
 from selenium.common.exceptions import ElementNotVisibleException
+from view_models import sidebar, keys_and_certificates_table as keyscertificates_constants, \
+    popups as popups, clients_table_vm, messages, keys_and_certificates_table, log_constants, cs_security_servers
+from view_models.keys_and_certificates_table import SUBJECT_DISTINGUISHED_NAME_POPUP_O_XPATH
 
 
 def test_generate_csr_and_import_cert(client_code, client_class, check_inputs=False, check_success=True,
@@ -46,10 +49,9 @@ def test_generate_csr_and_import_cert(client_code, client_class, check_inputs=Fa
                      generate_same_csr_twice=True,
                      log_checker=log_checker)
 
-
         # Get the certificate request path
-        file_path = glob.glob(self.get_download_path('_'.join(['*', server_name, client_class, client_code]) + '.der'))[
-            0]
+        file_path = self.wait_download_wildcard(
+            (self.get_download_path('_'.join(['*', server_name, client_class, client_code]) + '.der')))[0]
 
         # Create an SSH connection to CA
         client = ssh_client.SSHClient(self.config.get('ca.ssh_host'), self.config.get('ca.ssh_user'),
@@ -84,7 +86,7 @@ def test_generate_csr_and_import_cert(client_code, client_class, check_inputs=Fa
 
 
 def register_cert(self, ssh_host, ssh_user, ssh_pass, client, ca_ssh_host, ca_ssh_user, ca_ssh_pass, cert_path,
-                  check_inputs=False):
+                  check_inputs=False, ca_name=None):
     """
     SS_34 Register an Authentication Certificate
     :param cert_path:
@@ -101,7 +103,6 @@ def register_cert(self, ssh_host, ssh_user, ssh_pass, client, ca_ssh_host, ca_ss
     """
 
     def register():
-
         self.wait_until_visible(type=By.CSS_SELECTOR, element=sidebar.KEYSANDCERTIFICATES_BTN_CSS).click()
         self.wait_jquery()
 
@@ -125,7 +126,7 @@ def register_cert(self, ssh_host, ssh_user, ssh_pass, client, ca_ssh_host, ca_ss
         self.wait_jquery()
 
         self.log('Generate new auth certificate for the key')
-        generate_auth_csr(self, ca_name=ca_ssh_host, change_usage=False)
+        generate_auth_csr(self, ca_name=ca_name, organization='o', change_usage=False)
         '''Current time'''
         now_date = datetime.datetime.now()
         '''Downloaded csr file name'''
@@ -133,8 +134,9 @@ def register_cert(self, ssh_host, ssh_user, ssh_pass, client, ca_ssh_host, ca_ss
         file_name = 'sign_csr_' + now_date.strftime('%Y%m%d') + '_member_{0}_{1}_{2}.der'. \
             format(client['instance'], client['class'], client['code'])
         '''Downloaded csr file path'''
-        file_path = glob.glob(self.get_download_path('_'.join(['*']) + file_name))[0]
+        file_path = self.wait_download_wildcard(self.get_download_path('_'.join(['*']) + file_name))[0]
         '''SSH client instance for ca'''
+
         sshclient = ssh_server_actions.get_client(ca_ssh_host, ca_ssh_user, ca_ssh_pass)
         '''Remote csr path'''
         remote_csr_path = 'temp.der'
@@ -296,7 +298,7 @@ def generate_csr(self, client_code, client_class, server_name, check_inputs=Fals
 
         # UC SS_29 2. Check if CA can be chosen
         self.log('SS_29 2. Check 1: CA can be chosen')
-        filter(lambda x: self.config.get('ca.ssh_host').upper() in x.text, select.options).pop().click()
+        filter(lambda x: self.config.get('ca.ssh_host').upper() in x.text.upper(), select.options).pop().click()
 
         self.log('Click on "OK" button')
         self.wait_until_visible(type=By.XPATH,
@@ -338,7 +340,7 @@ def generate_csr(self, client_code, client_class, server_name, check_inputs=Fals
     options = filter(lambda y: str(y) is not '', map(lambda x: x.text, select.options))
     # Assertion for CA check 1
     assert len(filter(lambda x: self.config.get('ca.ssh_host').upper() in x, options)) == 1
-    filter(lambda x: self.config.get('ca.ssh_host').upper() in x.text, select.options).pop().click()
+    filter(lambda x: self.config.get('ca.ssh_host').upper() in x.text.upper(), select.options).pop().click()
 
     # Select client from the list
     self.log('Select "{0}"'.format(client))
@@ -466,7 +468,7 @@ def check_import(self, client_class, client_code):
         (str(tds[2].text) == 'good') & (str(tds[4].text) == 'registered')))
 
 
-def generate_auth_csr(self, ca_name, change_usage=True):
+def generate_auth_csr(self, ca_name, organization='o', change_usage=True):
     """
     Generates the CSR (certificate request) for a client.
     :param change_usage: bool - when True changes usage to auth
@@ -492,7 +494,7 @@ def generate_auth_csr(self, ca_name, change_usage=True):
     select = Select(self.wait_until_visible(type=By.ID,
                                             element=keyscertificates_constants.
                                             GENERATE_CSR_SIGNING_REQUEST_APPROVED_CA_DROPDOWN_ID))
-    select.select_by_visible_text(ca_name)
+    select.select_by_visible_text('Xroad Test CA CN')
 
     select = Select(self.wait_until_visible(type=By.ID,
                                             element=keyscertificates_constants.
@@ -505,6 +507,12 @@ def generate_auth_csr(self, ca_name, change_usage=True):
                             element=keyscertificates_constants.GENERATE_CSR_SIGNING_REQUEST_POPUP_OK_BTN_XPATH).click()
 
     self.wait_jquery()
+
+    self.wait_jquery()
+    if organization:
+        organization_input = self.wait_until_visible(type=By.XPATH, element=SUBJECT_DISTINGUISHED_NAME_POPUP_O_XPATH)
+        self.input(organization_input, organization)
+
     self.log('Click on "OK" button')
     self.wait_until_visible(type=By.XPATH,
                             element=keyscertificates_constants.SUBJECT_DISTINGUISHED_NAME_POPUP_OK_BTN_XPATH).click()
@@ -539,7 +547,8 @@ def delete_cert(self, ssh_host, ssh_user, ssh_pass):
 
     '''Verify Token key deletion'''
     try:
-        element = self.driver.find_element_by_xpath(keys_and_certificates_table.HARD_TOKEN_CERT_BY_KEY_LABEL.format('delete'))
+        element = self.driver.find_element_by_xpath(
+            keys_and_certificates_table.HARD_TOKEN_CERT_BY_KEY_LABEL.format('delete'))
         if element.is_displayed():
             raise RuntimeError('Token certificate is not deleted')
     except ElementNotVisibleException:

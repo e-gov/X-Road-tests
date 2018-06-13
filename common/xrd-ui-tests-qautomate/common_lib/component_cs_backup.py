@@ -172,6 +172,9 @@ class Component_cs_backup(CommonUtils):
         backup_file_path = os.path.join(download_folder, backup_file)
         self.common_lib.type_file_name_pyautogui(backup_file_path)
         self.cs_backup_restore_dlg_upload_backup.click_dialog_confirm()
+        
+        # TODO make verify message less error prone 
+        sleep(1)
 
         # Step Verify message and logs
         self.component_common.verify_notice_message(strings.backup_file_uploaded)

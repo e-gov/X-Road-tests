@@ -397,12 +397,15 @@ _Table 8. MainController class methods_
 | get\_cert\_path(path=&#39;&#39;) | Returns the configured mock certificate path. Otherwise works like _get\_path()_ |
 | get\_query\_path(path=&#39;&#39;) | Returns the configured test query path. Otherwise works like _get\_path()_ |
 | get\_xml\_query(filename) | Returns XML query data from a specified file using _get\_query\_path()_ to compute the full path. |
+| go(url) | Directs the browser to a URL. |
 | reset\_webdriver(url, username=None, password=None, close\_previous=None, init\_new\_webdriver=True) | Resets the browser (WebDriver) to a specified URL. If the browser window is not open or _init\_new\_webdriver=True_, starts a new browser instance. If _close\_previous=True_ and a browser window was open, closes it. Is _username_ is not _None_, tries to log in to XRoad GUI with _username_ and _password_. |
 | reload\_webdriver(url, username=None, password=None) | Sets the browser to a new URL. |
 | reset\_page() | Reloads the current browser page. |
 | start\_mock\_service() | If starting the Mock Service is not disabled in the configuration, tries to start it. Creates a new _MockRunner_ instance if it does not exist. |
 | save\_screenshot(filename) | Takes a screenshot of the current browser window and saves it to configured temporary directory. |
 | save\_text\_data(filename, data) | Saves text data to a file in the configured temporary directory. |
+| wait\_download(filename, download_time_limit=30, check_interval=1) | Check if file exists before limit has passed. |
+| wait\_download\_wildcard(filename, download_time_limit=30, check_interval=1) | Check if at least one matching file exists before limit has passed. |
 | logout() | Logs out from XRoad GUI. |
 | login(username, password) | Tries to log in to XRoad GUI with the specified credentials. |
 | log(message) | Prints the current timestamp and message to standard output. |
@@ -411,7 +414,7 @@ _Table 8. MainController class methods_
 | by\_xpath(element, multiple=False) | Gets an element from the current page in the browser using an XPath locator string. If _multiple=True_, returns multiple elements. |
 | by\_css(element, multiple=False) | Gets an element from the current page in the browser using a CSS selector string. If _multiple=True_, returns multiple elements. |
 | wait(condition, timeout=120) | Waits until the browser reports the specified condition to be true, or a timeout of _timeout_ seconds occurs. |
-| wait\_until\_visible(element, type=None, timeout=10, multiple=False) | Waits until specified element (or specified elements, depending on _multiple_ value) is visible or a timeout of _timeout_ seconds occurs. If _type_ is specified, _element_ can be a locator string. |
+| wait\_until\_visible(element, type=None, timeout=30, multiple=False) | Waits until specified element (or specified elements, depending on _multiple_ value) is visible or a timeout of _timeout_ seconds occurs. If _type_ is specified, _element_ can be a locator string. |
 | js(script, \*args) | Executes a JavaScript with optional arguments in the browser and returns the result. |
 | async\_js(script, \*args) | Executes a JavaScript asynchronously (non-blocking) in the browser. |
 | wait\_jquery(timeout=120) | Waits until jQuery object is not active or a timeout of _timeout_ seconds occurs . Used when checking if jQuery-based AJAX queries have finished. |
